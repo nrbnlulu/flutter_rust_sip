@@ -78,5 +78,30 @@ void main(List<String> args) async {
         _pkgConfigSysrootAarch64EnvVar: pkgConfigSysrootDir,
       },
     ).run(input: input, output: output);
+
+    final codeConfig = input.config.code;
+    if (codeConfig.targetOS == OS.android) {
+      final ndkArchDir = switch (codeConfig.targetArchitecture) {
+        Architecture.arm64 => 'aarch64-linux-android',
+        Architecture.arm => 'arm-linux-androideabi',
+        Architecture.x64 => 'x86_64-linux-android',
+        Architecture.ia32 => 'i686-linux-android',
+        Architecture.riscv64 => 'riscv64-linux-android',
+        _ => null,
+      };
+
+      if (ndkArchDir != null) {
+        output.assets.code.add(
+          CodeAsset(
+            package: input.packageName,
+            name: 'c++_shared',
+            linkMode: DynamicLoadingBundled(),
+            file: Uri.file(
+              '$pkgConfigSysrootDir/usr/lib/$ndkArchDir/libc++_shared.so',
+            ),
+          ),
+        );
+      }
+    }
   });
 }
